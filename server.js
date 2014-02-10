@@ -1,24 +1,33 @@
 var express = require('express');
 // var http = require('http');
 var request = require('superagent');
+var cryptsy = require('cryptsy-api');
 
 var app = express();
 
 var debugMode = true;
 
-app.get('/', function(req, res) {
+var client = new cryptsy('asdf','asdf');
 
-    request.get('http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=132')
-      .on('error', function(err) {
-        handleError(err, res, 'could not get data');
-      })
-      .end(function(r){
+
+
+app.get('/markets/:market_id', function(req, res) {
+
+    client.singlemarketdata(req.params.market_id, function(r) {
         if(r.error) {
-           handleError(r.error, res, 'could not get data');
-           return;
+            handleError(r.error, res, 'could not get data');
+            return;
         }
-        res.send(r.body.return.markets.DOGE.recenttrades[0].price);
-      });
+        var market = {};
+        for(var market_lbl in r.markets) {
+            market = r.markets[market_lbl];
+            break;
+        }
+        res.send({
+            label: market.label,
+            price: market.recenttrades[0].price
+        });
+    });
 
 });
 
